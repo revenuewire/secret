@@ -1,0 +1,21 @@
+{
+  "name": "revenuewire/secret",
+  "type": "library",
+  "description": "handle secret by using KMS",
+  "homepage": "https://github.com/revenuewire/jwt",
+  "license": "Apache License 2.0",
+  "authors": [
+    {
+      "name": "Scott Wang",
+      "email": "swang@revenuewire.com"
+    }
+  ],
+  "autoload": {
+    "psr-4" : {
+      "RW\\" : "src/"
+    }
+  },
+  "require": {
+    "aws/aws-sdk-php": "^3.35"
+  }
+}
