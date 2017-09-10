@@ -2,6 +2,16 @@
 require_once __DIR__ . "./../vendor/autoload.php";
 date_default_timezone_set( 'UTC' );
 
+function read_stdin()
+{
+    $fr=fopen("php://stdin","r");   // open our file pointer to read from stdin
+    $input = fgets($fr,128);        // read a maximum of 128 characters
+    $input = rtrim($input);         // trim any trailing spaces.
+    fclose ($fr);                   // close the file handle
+    return $input;                  // return the text entered
+}
+
+
 $options = getopt('', ['key::', 'override::', 'region::', 'alias::', 'dynamo::']);
 $key = preg_replace('~[^\\pL\d]+~u', '-', trim($options['key']));
 
@@ -40,21 +50,40 @@ $kmsConfig = [
 $kmsClient = new \Aws\Kms\KmsClient($kmsConfig);
 
 //generate new secret automatically
-if (empty($secret)) {
+if ($override === false) {
     $kmsResult = $kmsClient->generateDataKey([
         "KeyId" => "alias/$alias",
         "KeySpec" => "AES_256"
     ]);
 
-    $secret = base64_encode($kmsResult->get("CiphertextBlob"));
+    $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
 } else {
+    echo "Please input the secret ";
+    $secret = read_stdin();
+    if (strlen($secret) < 8) {
+        throw new \InvalidArgumentException("Secret too short!");
+    }
+
+    if (!preg_match("#[0-9]+#", $secret)) {
+        throw new \InvalidArgumentException("Secret must include at least one number!");
+    }
+
+    if (!preg_match("#[a-zA-Z]+#", $secret)) {
+        throw new \InvalidArgumentException("Secret must include at least one letter!");
+    }
+
     //encrypt the secret
+    $kmsResult = $kmsClient->encrypt([
+        "KeyId" => "alias/$alias",
+        "Plaintext" => $secret,
+    ]);
+    $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
 }
 
 if (empty($itemResult->get("Item"))) {
     $dynamoDBClient->putItem(array(
         'TableName' => $dynamoTable,
-        'Item' => $marshaller->marshalItem(["id" => $key, "secret" => $secret]),
+        'Item' => $marshaller->marshalItem(["id" => $key, "secret" => $encodedSecret]),
         'ConditionExpression' => 'attribute_not_exists(id)',
         'ReturnValues' => 'ALL_OLD'
     ));
@@ -64,10 +93,10 @@ if (empty($itemResult->get("Item"))) {
         'Key' => array(
             'id' => $marshaller->marshalValue($key)
         ),
-        'ExpressionAttributeNames' => ["#secrect"],
-        'ExpressionAttributeValues' =>  [":secret"],
+        'ExpressionAttributeNames' => ["#secret" => "secret"],
+        'ExpressionAttributeValues' =>  [":secret" => $marshaller->marshalValue($encodedSecret)],
         'ConditionExpression' => 'attribute_exists(id)',
-        'UpdateExpression' => "set #secrect = :secret",
+        'UpdateExpression' => "set #secret = :secret",
         'ReturnValues' => 'ALL_NEW'
     ];
 
