@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/revenuewire/secret.svg?branch=master)](https://travis-ci.org/revenuewire/secret)
+
 #Install
 ```bash
 composer require revenuewire/secret
