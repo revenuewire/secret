@@ -28,84 +28,14 @@ try {
     $alias = empty($options['alias']) ? "rw-secret" : $options['alias'];
     $dynamoTable = empty($options['dynamo']) ? "secrets" : $options['dynamo'];
 
-    $marshaller = new \Aws\DynamoDb\Marshaler();
-    $dynamoDBClient = new \Aws\DynamoDb\DynamoDbClient([
-        "region" => $region,
-        "version" => "2012-08-10"
-    ]);
-
-    /** @var $itemResult \Aws\Result */
-    $itemResult = $dynamoDBClient->getItem([
-        'TableName' => $dynamoTable,
-        'Key' => array(
-            'id' => array('S' => $key)
-        ),
-        'ConsistentRead' => true,
-    ]);
-
-    if (!empty($itemResult->get("Item")) && $override === false) {
-        throw new Exception("Key already exists. Override the secret by --override.");
-    }
-
-    $kmsConfig = [
-        "region" => $region,
-        "version" => "2014-11-01"
-    ];
-    $kmsClient = new \Aws\Kms\KmsClient($kmsConfig);
-
-//generate new secret automatically
-    if ($override === false) {
-        $kmsResult = $kmsClient->generateDataKey([
-            "KeyId" => "alias/$alias",
-            "KeySpec" => "AES_256"
-        ]);
-
-        $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
-    } else {
+    //generate new secret automatically
+    $secret = null;
+    if ($override === true) {
         echo "Please input the secret ";
         $secret = read_stdin();
-        if (strlen($secret) < 8) {
-            throw new \InvalidArgumentException("Secret too short!");
-        }
-
-        if (!preg_match("#[0-9]+#", $secret)) {
-            throw new \InvalidArgumentException("Secret must include at least one number!");
-        }
-
-        if (!preg_match("#[a-zA-Z]+#", $secret)) {
-            throw new \InvalidArgumentException("Secret must include at least one letter!");
-        }
-
-        //encrypt the secret
-        $kmsResult = $kmsClient->encrypt([
-            "KeyId" => "alias/$alias",
-            "Plaintext" => $secret,
-        ]);
-        $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
     }
 
-    if (empty($itemResult->get("Item"))) {
-        $dynamoDBClient->putItem(array(
-            'TableName' => $dynamoTable,
-            'Item' => $marshaller->marshalItem(["id" => $key, "secret" => $encodedSecret]),
-            'ConditionExpression' => 'attribute_not_exists(id)',
-            'ReturnValues' => 'ALL_OLD'
-        ));
-    } else {
-        $updateAttributes = [
-            'TableName' => $dynamoTable,
-            'Key' => array(
-                'id' => $marshaller->marshalValue($key)
-            ),
-            'ExpressionAttributeNames' => ["#secret" => "secret"],
-            'ExpressionAttributeValues' => [":secret" => $marshaller->marshalValue($encodedSecret)],
-            'ConditionExpression' => 'attribute_exists(id)',
-            'UpdateExpression' => "set #secret = :secret",
-            'ReturnValues' => 'ALL_NEW'
-        ];
-
-        $dynamoDBClient->updateItem($updateAttributes);
-    }
+    \RW\Secret::put($key, $region, $dynamoTable, $alias, $secret, $override);
     echo "ok\n";
 } catch (Exception $e) {
     echo "failed. [Exception: {$e->getMessage()}]\n";
