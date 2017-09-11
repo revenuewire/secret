@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/revenuewire/secret.svg?branch=master)](https://travis-ci.org/revenuewire/secret)
 
+#Description
+RW Secret Service is designed to hold encrypted keys through AWS KMS system.
+
 #Install
 ```bash
 composer require revenuewire/secret
@@ -7,7 +10,7 @@ composer require revenuewire/secret
 
 #Put a secret
 ```bash
-php ./vendor/revenuewire/secret/bin/put [key] [secret]
+php ./bin/put --key=[key]
 ```
 
 #Get a secret
