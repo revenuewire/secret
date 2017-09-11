@@ -17,12 +17,6 @@ try {
         throw new Exception("Key is required. php ./vendor/put.php --key=[your_key]");
     }
 
-    $key = preg_replace('~[^\\pL\d]+~u', '-', trim($options['key']));
-
-    if (empty($key)) {
-        throw new Exception("Key is required. php ./vendor/put.php --key=[your_key]");
-    }
-
     $override = empty($options['override']) ? false : filter_var($options['override'], FILTER_VALIDATE_BOOLEAN);
     $region = empty($options['region']) ? "us-west-2" : $options['region'];
     $alias = empty($options['alias']) ? "rw-secret" : $options['alias'];
@@ -35,7 +29,7 @@ try {
         $secret = read_stdin();
     }
 
-    \RW\Secret::put($key, $region, $dynamoTable, $alias, $secret, $override);
+    \RW\Secret::put($options['key'], $region, $dynamoTable, $alias, $secret, $override);
     echo "ok\n";
 } catch (Exception $e) {
     echo "failed. [Exception: {$e->getMessage()}]\n";

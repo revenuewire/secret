@@ -34,7 +34,7 @@ class Secret
         ]);
 
         if (empty($itemResult->get("Item"))) {
-            throw new \Exception("Key does not exists.");
+            throw new \InvalidArgumentException("Key does not exists.");
         }
 
         $marshaller = new Marshaler();
@@ -66,6 +66,12 @@ class Secret
      */
     public static function put($key, $region = "us-west-2", $table = "secrets", $alias = "rw-secret", $secret = null, $override = false)
     {
+        $key = preg_replace('~[^\\pL\d]+~u', '-', trim($key));
+
+        if (empty($key)) {
+            throw new \InvalidArgumentException("Key is required.");
+        }
+
         $dynamoDBClient = new DynamoDbClient([
             "region" => $region,
             "version" => "2012-08-10"

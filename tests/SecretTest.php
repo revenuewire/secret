@@ -28,6 +28,24 @@ class SecretTest extends \PHPUnit\Framework\TestCase
    }
 
     /**
+     * @expectedException InvalidArgumentException
+     * @expectedExceptionMessage Key is required.
+     */
+   public function testEmptyKey()
+   {
+       \RW\Secret::put("", self::$region, self::$table, self::$alias, "top-secret-007");
+   }
+
+    /**
+     * @expectedException InvalidArgumentException
+     * @expectedExceptionMessage Key does not exists.
+     */
+    public function testKeyNotExists()
+    {
+        \RW\Secret::get("non-exists-key", self::$region, self::$table);
+    }
+
+    /**
      * @return string
      */
     public function testPut()
