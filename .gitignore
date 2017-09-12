@@ -12,3 +12,4 @@ sftp-config.json
 npm-debug.log
 run
 vendor
+build
