@@ -16,9 +16,10 @@
     }
   },
   "require": {
-    "aws/aws-sdk-php": "^3.35"
+    "aws/aws-sdk-php": "^3.35",
+    "phpunit/phpunit": "^6.3"
   },
   "require-dev": {
-    "phpunit/phpunit": "5.5"
+    "php-coveralls/php-coveralls": "^1.0"
   }
 }
