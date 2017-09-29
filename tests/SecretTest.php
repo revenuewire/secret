@@ -2,7 +2,7 @@
 class SecretTest extends \PHPUnit\Framework\TestCase
 {
     public static $region = "us-west-1";
-    public static $table = "secrets-test";
+    public static $table = "secrets";
     public static $alias = "rw-secret"; //kms alias
 
     public static function tearDownAfterClass()
