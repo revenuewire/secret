@@ -66,7 +66,7 @@ class Secret
      */
     public static function put($key, $region = "us-west-2", $table = "secrets", $alias = "rw-secret", $secret = null, $override = false)
     {
-        $key = preg_replace('~[^\\pL\d]+~u', '-', trim($key));
+        $key = preg_replace('~[^\\pL\d_]+~u', '-', trim($key));
 
         if (empty($key)) {
             throw new \InvalidArgumentException("Key is required.");
