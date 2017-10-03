@@ -112,15 +112,6 @@ class SecretTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Secret must include at least one number!
-     */
-    public function testAtLeastOneNumber()
-    {
-        \RW\Secret::put("ci-test-3", self::$region, self::$table, self::$alias, "top-secret", true);
-    }
-
-    /**
-     * @expectedException InvalidArgumentException
      * @expectedExceptionMessage Secret must include at least one letter!
      */
     public function testAtLeastOneLetter()

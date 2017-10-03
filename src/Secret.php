@@ -107,10 +107,6 @@ class Secret
                 throw new \InvalidArgumentException("Secret too short!");
             }
 
-            if (!preg_match("#[0-9]+#", $secret)) {
-                throw new \InvalidArgumentException("Secret must include at least one number!");
-            }
-
             if (!preg_match("#[a-zA-Z]+#", $secret)) {
                 throw new \InvalidArgumentException("Secret must include at least one letter!");
             }
