@@ -1,0 +1,18 @@
+version: '2'
+services:
+  dynamodb:
+    image: instructure/dynamo-local-admin
+
+  redis:
+    image: redis:latest
+
+  test:
+    image: revenuewire/docker-php7-xdebug:latest
+    links:
+        - dynamodb:dynamodb
+        - redis:redis
+    volumes:
+        - $PWD:/var/www
+    working_dir: /var/www/
+    command: ./vendor/bin/phpunit
+

@@ -3,23 +3,54 @@ class SecretTest extends \PHPUnit\Framework\TestCase
 {
     public static $region = "us-west-1";
     public static $table = "secrets";
-    public static $alias = "rw-secret"; //kms alias
+    public static $alias = "sandbox-secrets"; //kms alias
+
+
+    public static function setUpBeforeClass()
+    {
+        $schema = array(
+            "TableName" => "secrets",
+            "AttributeDefinitions" => [
+                [
+                    'AttributeName' => 'id',
+                    'AttributeType' => 'S',
+                ]
+            ],
+            'KeySchema' => [
+                [
+                    'AttributeName' => 'id',
+                    'KeyType' => 'HASH',
+                ]
+            ],
+            'ProvisionedThroughput' => [
+                'ReadCapacityUnits' => 5,
+                'WriteCapacityUnits' => 5,
+            ]
+        );
+        \RW\Secret::initDynamo(self::$region, "http://dynamodb:8000");
+        try {
+            \RW\Secret::$dynamoClient->createTable($schema);
+        } catch (Exception $e) {}
+
+        $options = ['cluster' => 'redis'];
+        $redis = new \Predis\Client(array(
+            'scheme'   => 'tcp',
+            'host'     => "redis",
+            'timeout' => 5
+        ), $options);
+        \RW\Secret::initCache($redis);
+    }
 
     public static function tearDownAfterClass()
     {
-        $dbClient = new \Aws\DynamoDb\DynamoDbClient([
-            "region" => self::$region,
-            "version" => "2012-08-10"
-        ]);
-
-        $dbClient->deleteItem([
+        \RW\Secret::$dynamoClient->deleteItem([
             'TableName' => self::$table,
             'Key' => array(
                 'id' => array('S' => "ci-test")
             ),
         ]);
 
-        $dbClient->deleteItem([
+        RW\Secret::$dynamoClient->deleteItem([
            'TableName' => self::$table,
            'Key' => array(
                'id' => array('S' => "ci-test-2")
@@ -71,6 +102,15 @@ class SecretTest extends \PHPUnit\Framework\TestCase
     {
         $secret = \RW\Secret::get('ci-test', self::$region, self::$table);
         $this->assertSame("top-secret-008", $secret);
+    }
+
+    /**
+     * @depends testGet
+     */
+    public function testGetCache()
+    {
+        $secret = \RW\Secret::get('ci-test', self::$region, self::$table);
+        $this->assertSame("top-secret-008", $secret); //cache hit
     }
 
     /**
