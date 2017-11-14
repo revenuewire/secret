@@ -1,9 +1,8 @@
-sudo: required
-services:
-  - docker
+language: php
+php:
+  - 7.1
 install:
   - composer install --optimize-autoloader
-script: docker-compose run --rm test
+script: phpunit
 after_success:
-  - docker-compose down
   - travis_retry php vendor/bin/coveralls -v
