@@ -18,7 +18,7 @@ try {
     }
 
     $override = empty($options['override']) ? false : filter_var($options['override'], FILTER_VALIDATE_BOOLEAN);
-    $regions = empty($options['region']) ? ["us-west-1"] : explode(',', $options['region']);
+    $region = empty($options['region']) ? "us-west-2" : $options['region'];
     $alias = empty($options['alias']) ? "rw-secret" : $options['alias'];
     $dynamoTable = empty($options['dynamo']) ? "secrets" : $options['dynamo'];
 
@@ -29,9 +29,7 @@ try {
         $secret = read_stdin();
     }
 
-    foreach ($regions as $region) {
-        \RW\Secret::put($options['key'], $region, $dynamoTable, $alias, $secret, $override);
-    }
+    \RW\Secret::put($options['key'], $region, $dynamoTable, $alias, $secret, $override);
     echo "ok\n";
 } catch (Exception $e) {
     echo "failed. [Exception: {$e->getMessage()}]\n";
