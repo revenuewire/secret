@@ -10,4 +10,4 @@ script: docker-compose run --rm test
 after_success:
   - docker-compose down
   - sudo chmod 777 -R ./build
-  - sudo travis_retry php vendor/bin/coveralls -v
+  - travis_retry sudo php vendor/bin/coveralls -v
