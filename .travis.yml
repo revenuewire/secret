@@ -9,4 +9,5 @@ install:
 script: docker-compose run --rm test
 after_success:
   - docker-compose down
+  - chmod 777 -R ./build
   - travis_retry php vendor/bin/coveralls -v
