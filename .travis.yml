@@ -6,7 +6,7 @@ services:
   - docker
 install:
   - composer install --optimize-autoloader
-script: phpunit
+script: docker-compose run --rm test
 after_success:
   - docker-compose down
   - chmod 777 -R ./build
