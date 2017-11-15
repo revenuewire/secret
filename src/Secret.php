@@ -4,9 +4,51 @@ namespace RW;
 use Aws\DynamoDb\DynamoDbClient;
 use Aws\DynamoDb\Marshaler;
 use Aws\Kms\KmsClient;
+use Predis\Client;
 
 class Secret
 {
+    const CACHE_TTL = 600;
+
+    /** @var $cache Client */
+    public static $cache = null;
+
+    /** @var $dynamoClient DynamoDbClient */
+    public static $dynamoClient = null;
+
+    /**
+     * Init Cache instance
+     * @param $cache Client
+     * @codeCoverageIgnore
+     */
+    public static function initCache($cache)
+    {
+        if ($cache instanceof Client) {
+            self::$cache = $cache;
+        }
+    }
+
+    /**
+     * Init Dynamo
+     *
+     * @param $region
+     * @param null $endpoint
+     * @codeCoverageIgnore
+     */
+    public static function initDynamo($region, $endpoint = null)
+    {
+        $config = [
+            "region" => $region,
+            "version" => "2012-08-10"
+        ];
+
+        if (!empty($endpoint)) {
+            $config['endpoint'] = $endpoint;
+        }
+
+        self::$dynamoClient = new DynamoDbClient($config);
+    }
+
     /**
      * Get the secret
      *
@@ -19,13 +61,23 @@ class Secret
      */
     public static function get($key, $region = "us-west-2", $table = "secrets")
     {
-        $dynamoDBClient = new DynamoDbClient([
-            "region" => $region,
-            "version" => "2012-08-10"
-        ]);
+        $cacheKey = "secret::" . implode('-', [$key, $region, $table]);
+
+        if (self::$cache !== null) {
+            if (self::$cache->exists($cacheKey)) {
+                $secret = self::$cache->get($cacheKey);
+                if (!empty($secret)) {
+                    return $secret;
+                }
+            }
+        }
+
+        if (!self::$dynamoClient instanceof DynamoDbClient) {
+            self::initDynamo($region);
+        }
 
         /** @var $itemResult \Aws\Result */
-        $itemResult = $dynamoDBClient->getItem([
+        $itemResult = self::$dynamoClient->getItem([
             'TableName' => $table,
             'Key' => array(
                 'id' => array('S' => $key)
@@ -50,7 +102,13 @@ class Secret
             'CiphertextBlob' => base64_decode($encodedSecret),
         ]);
 
-        return $kmsResult->get('Plaintext');
+        $secret = $kmsResult->get('Plaintext');
+        if (self::$cache !== null) {
+            self::$cache->set($cacheKey, $secret);
+            self::$cache->expire($cacheKey, self::CACHE_TTL);
+        }
+
+        return $secret;
     }
 
     /**
@@ -72,13 +130,12 @@ class Secret
             throw new \InvalidArgumentException("Key is required.");
         }
 
-        $dynamoDBClient = new DynamoDbClient([
-            "region" => $region,
-            "version" => "2012-08-10"
-        ]);
+        if (!self::$dynamoClient instanceof DynamoDbClient) {
+            self::initDynamo($region);
+        }
 
         /** @var $itemResult \Aws\Result */
-        $itemResult = $dynamoDBClient->getItem([
+        $itemResult = self::$dynamoClient->getItem([
             'TableName' => $table,
             'Key' => array(
                 'id' => array('S' => $key)
@@ -102,6 +159,7 @@ class Secret
             ]);
 
             $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
+            $secret = $kmsResult->get("Plaintext");
         } else {
             if (strlen($secret) < 8) {
                 throw new \InvalidArgumentException("Secret too short!");
@@ -119,9 +177,15 @@ class Secret
             $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
         }
 
+        $cacheKey = "secret::" . implode('-', [$key, $region, $table]);
+        if (self::$cache !== null) {
+            self::$cache->set($cacheKey, $secret);
+            self::$cache->expire($cacheKey, self::CACHE_TTL);
+        }
+
         $marshaller = new Marshaler();
         if (empty($itemResult->get("Item"))) {
-            $dynamoDBClient->putItem(array(
+            self::$dynamoClient->putItem(array(
                 'TableName' => $table,
                 'Item' => $marshaller->marshalItem(["id" => $key, "secret" => $encodedSecret]),
                 'ConditionExpression' => 'attribute_not_exists(id)',
@@ -140,7 +204,7 @@ class Secret
                 'ReturnValues' => 'ALL_NEW'
             ];
 
-            $dynamoDBClient->updateItem($updateAttributes);
+            self::$dynamoClient->updateItem($updateAttributes);
         }
 
         return true;
