@@ -159,7 +159,6 @@ class Secret
             ]);
 
             $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
-            $secret = $kmsResult->get("Plaintext");
         } else {
             if (strlen($secret) < 8) {
                 throw new \InvalidArgumentException("Secret too short!");
@@ -175,12 +174,6 @@ class Secret
                 "Plaintext" => $secret,
             ]);
             $encodedSecret = base64_encode($kmsResult->get("CiphertextBlob"));
-        }
-
-        $cacheKey = "secret::" . implode('-', [$key, $region, $table]);
-        if (self::$cache !== null) {
-            self::$cache->set($cacheKey, $secret);
-            self::$cache->expire($cacheKey, self::CACHE_TTL);
         }
 
         $marshaller = new Marshaler();
