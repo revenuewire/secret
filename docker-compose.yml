@@ -12,8 +12,8 @@ services:
         - dynamodb:dynamodb
         - redis:redis
     volumes:
-        - $PWD:/var/www
-    working_dir: /var/www/
+        - $PWD:$PWD
+    working_dir: $PWD
     command: ./vendor/bin/phpunit
     environment:
       - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
