@@ -76,6 +76,7 @@ class Secret
             self::initDynamo($region);
         }
 
+        $key .= '-' . $region;
         /** @var $itemResult \Aws\Result */
         $itemResult = self::$dynamoClient->getItem([
             'TableName' => $table,
@@ -133,12 +134,13 @@ class Secret
         if (!self::$dynamoClient instanceof DynamoDbClient) {
             self::initDynamo($region);
         }
+        $key .= '-' . $region;
 
         /** @var $itemResult \Aws\Result */
         $itemResult = self::$dynamoClient->getItem([
             'TableName' => $table,
             'Key' => array(
-                'id' => array('S' => $key)
+                'id' => array('S' => $key )
             ),
             'ConsistentRead' => true,
         ]);
