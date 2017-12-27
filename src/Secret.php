@@ -16,6 +16,9 @@ class Secret
     /** @var $dynamoClient DynamoDbClient */
     public static $dynamoClient = null;
 
+    /** @var array local memory copies */
+    public static $keys = [];
+
     /**
      * Init Cache instance
      * @param $cache Client
@@ -63,15 +66,23 @@ class Secret
     {
         $cacheKey = "secret::" . implode('-', [$key, $region, $table]);
 
+        // check memory first
+        if (!empty(self::$keys[$cacheKey])) {
+            return self::$keys[$cacheKey];
+        }
+
+        // check cache
         if (self::$cache !== null) {
             if (self::$cache->exists($cacheKey)) {
                 $secret = self::$cache->get($cacheKey);
                 if (!empty($secret)) {
+                    self::$keys[$cacheKey] = $secret;
                     return $secret;
                 }
             }
         }
 
+        // finally, check db
         if (!self::$dynamoClient instanceof DynamoDbClient) {
             self::initDynamo($region);
         }
@@ -109,6 +120,7 @@ class Secret
             self::$cache->expire($cacheKey, self::CACHE_TTL);
         }
 
+        self::$keys[$cacheKey] = $secret;
         return $secret;
     }
 
