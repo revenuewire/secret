@@ -5,7 +5,7 @@ date_default_timezone_set( 'UTC' );
 function read_stdin()
 {
     $fr=fopen("php://stdin","r");   // open our file pointer to read from stdin
-    $input = fgets($fr,128);        // read a maximum of 128 characters
+    $input = fgets($fr,1280);        // read a maximum of 1280 characters
     $input = rtrim($input);         // trim any trailing spaces.
     fclose ($fr);                   // close the file handle
     return $input;                  // return the text entered
