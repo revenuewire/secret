@@ -19,8 +19,8 @@ try {
 
     $override = empty($options['override']) ? false : filter_var($options['override'], FILTER_VALIDATE_BOOLEAN);
     $regions = empty($options['region']) ? ["us-west-1"] : explode(',', $options['region']);
-    $alias = empty($options['alias']) ? "rw-secret" : $options['alias'];
-    $dynamoTable = empty($options['dynamo']) ? "secrets" : $options['dynamo'];
+    $alias = empty($options['alias']) ? "sandbox-secrets" : $options['alias'];
+    $dynamoTable = empty($options['dynamo']) ? "sandbox-secrets" : $options['dynamo'];
 
     //generate new secret automatically
     $secret = null;
