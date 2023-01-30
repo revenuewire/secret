@@ -16,11 +16,11 @@
     }
   },
   "require": {
-    "aws/aws-sdk-php": "^3.35",
-    "predis/predis": "^1.1"
+    "aws/aws-sdk-php": "^3.257",
+    "predis/predis": "^2"
   },
   "require-dev": {
-    "php-coveralls/php-coveralls": "^1.0",
-    "phpunit/phpunit": "^6.3"
+    "php-coveralls/php-coveralls": "^2.5",
+    "phpunit/phpunit": "^9"
   }
 }
