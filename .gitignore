@@ -13,3 +13,4 @@ npm-debug.log
 run
 vendor
 build
+composer.phar
